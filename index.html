@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>משחק אוצר מילים באנגלית - גרסה מטורפת</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: 'Rubik', sans-serif;
+            overflow: hidden;
+            background: linear-gradient(45deg, #40e0d0, #8a2be2, #ffd700);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #game-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            text-align: center;
+            max-width: 90%;
+            width: 600px;
+        }
+
+        h1 {
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            font-size: 2.5em;
+            margin-bottom: 30px;
+        }
+
+        #word-display {
+            font-size: 36px;
+            margin: 30px 0;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        #guess-input {
+            font-size: 20px;
+            padding: 10px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            color: #333;
+            width: 60%;
+            transition: all 0.3s ease;
+        }
+
+        #guess-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background: linear-gradient(45deg, #ffd700, #ff8c00);
+            border: none;
+            border-radius: 50px;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.2);
+        }
+
+        #message {
+            margin: 20px 0;
+            font-weight: bold;
+            font-size: 24px;
+            min-height: 30px;
+        }
+
+        #score {
+            font-size: 24px;
+            margin: 20px 0;
+            color: #fff;
+        }
+
+        #difficulty-selector {
+            margin: 20px 0;
+        }
+
+        #difficulty {
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.8);
+            border: none;
+        }
+
+        #end-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        #end-screen h2 {
+            color: #ffd700;
+            font-size: 48px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            animation: victoryPulse 2s infinite;
+        }
+
+        @keyframes victoryPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        #final-score {
+            color: #ffffff;
+            font-size: 36px;
+            margin: 20px 0;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: #f0f;
+            animation: confetti-fall 5s ease-in-out infinite, confetti-shake 3s ease-in-out infinite;
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100vh) rotate(0deg); }
+            100% { transform: translateY(100vh) rotate(720deg); }
+        }
+
+        @keyframes confetti-shake {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>משחק אוצר מילים באנגלית</h1>
+        <div id="difficulty-selector">
+            <label for="difficulty">בחר רמת קושי: </label>
+            <select id="difficulty">
+                <option value="1">קל</option>
+                <option value="2">בינוני</option>
+                <option value="3">מתקדם</option>
+                <option value="4">קשה</option>
+                <option value="5">מומחה</option>
+            </select>
+        </div>
+        <div id="word-display"></div>
+        <input type="text" id="guess-input" placeholder="הקלד את התרגום כאן">
+        <button id="submit-guess">בדוק</button>
+        <button id="speak-word">השמע מילה</button>
+        <button id="show-answer">הצג תשובה</button>
+        <div id="message"></div>
+        <div id="score">ניקוד: <span id="score-value">0</span></div>
+    </div>
+    <div id="end-screen">
+        <h2>כל הכבוד!</h2>
+        <div id="final-score"></div>
+        <button id="play-again">שחק שוב</button>
+    </div>
+
+    <script>
+        const words = {
+            1: [
+                {en: "cat", he: "חתול"},
+                {en: "dog", he: "כלב"},
+                {en: "house", he: "בית"},
+                {en: "tree", he: "עץ"},
+                {en: "book", he: "ספר"}
+            ],
+            2: [
+                {en: "beautiful", he: "יפה"},
+                {en: "computer", he: "מחשב"},
+                {en: "telephone", he: "טלפון"},
+                {en: "restaurant", he: "מסעדה"},
+                {en: "friendship", he: "חברות"}
+            ],
+            3: [
+                {en: "appreciate", he: "להעריך"},
+                {en: "opportunity", he: "הזדמנות"},
+                {en: "discover", he: "לגלות"},
+                {en: "experience", he: "חוויה"},
+                {en: "challenge", he: "אתגר"}
+            ],
+            4: [
+                {en: "sophisticated", he: "מתוחכם"},
+                {en: "perseverance", he: "התמדה"},
+                {en: "ambiguous", he: "דו-משמעי"},
+                {en: "phenomenon", he: "תופעה"},
+                {en: "eloquent", he: "רהוט"}
+            ],
+            5: [
+                {en: "serendipity", he: "מקריות מוצלחת"},
+                {en: "ephemeral", he: "חולף"},
+                {en: "quintessential", he: "מובהק"},
+                {en: "ubiquitous", he: "נמצא בכל מקום"},
+                {en: "esoteric", he: "אזוטרי"}
+            ]
+        };
+
+        let currentWord;
+        let score = 0;
+        let difficulty = 1;
+
+        const wordDisplay = document.getElementById('word-display');
+        const guessInput = document.getElementById('guess-input');
+        const submitGuess = document.getElementById('submit-guess');
+        const speakWord = document.getElementById('speak-word');
+        const showAnswer = document.getElementById('show-answer');
+        const message = document.getElementById('message');
+        const scoreDisplay = document.getElementById('score-value');
+        const difficultySelector = document.getElementById('difficulty');
+        const endScreen = document.getElementById('end-screen');
+        const finalScore = document.getElementById('final-score');
+        const playAgain = document.getElementById('play-again');
+
+        function getRandomWord() {
+            const wordList = words[difficulty];
+            return wordList[Math.floor(Math.random() * wordList.length)];
+        }
+
+        function displayWord() {
+            currentWord = getRandomWord();
+            wordDisplay.textContent = currentWord.he;
+            guessInput.value = '';
+            message.textContent = '';
+        }
+
+        function checkGuess() {
+            const guess = guessInput.value.trim().toLowerCase();
+            if (guess === currentWord.en.toLowerCase()) {
+                message.textContent = 'נכון!';
+                message.style.color = '#4CAF50';
+                score++;
+                scoreDisplay.textContent = score;
+                createStars();
+                if (score >= 10) {
+                    showEndScreen();
+                } else {
+                    displayWord();
+                }
+            } else {
+                message.textContent = 'לא נכון. נסה שוב.';
+                message.style.color = '#FF5252';
+                shakeElement(guessInput);
+            }
+        }
+
+        function speakCurrentWord() {
+            const utterance = new SpeechSynthesisUtterance(currentWord.en);
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        function showCurrentAnswer() {
+            message.textContent = `התשובה הנכונה: ${currentWord.en}`;
+            message.style.color = '#2196F3';
+        }
+
+        function changeDifficulty() {
+            difficulty = parseInt(difficultySelector.value);
+            score = 0;
+            scoreDisplay.textContent = score;
+            displayWord();
+        }
+
+        function showEndScreen() {
+            endScreen.style.display = 'flex';
+            finalScore.textContent = `הניקוד הסופי שלך: ${score}`;
+            createConfetti();
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.animationDelay = `${Math.random() * 5}s`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                document.body.appendChild(confetti);
+            }
+        }
+
+        function createStars() {
+            for (let i = 0; i < 5; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                document.body.appendChild(star);
+                setTimeout(() => star.remove(), 2000);
+            }
+        }
+
+        function shakeElement(element) {
+            element.classList.add('shake');
+            setTimeout(() => element.classList.remove('shake'), 500);
+        }
+
+        submitGuess.addEventListener('click', checkGuess);
+        guessInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkGuess();
+        });
+        speakWord.addEventListener('click', speakCurrentWord);
+        showAnswer.addEventListener('click', showCurrentAnswer);
+        difficultySelector.addEventListener('change', changeDifficulty);
+        playAgain.addEventListener('click', () => {
+            endScreen.style.display = 'none';
+            score = 0;
+            scoreDisplay.textContent = score;
+            displayWord();
+            document.querySelectorAll('.confetti').forEach(c => c.remove());
+        });
+
+        displayWord();
+    </script>
+</body>
+</html>
